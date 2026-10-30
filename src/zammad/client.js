@@ -7,7 +7,7 @@
 // "Agent tickets"), sent as `Authorization: Token token=…`.
 //
 //   GET  /api/v1/users/me          the token's user (its id: "assigned to me")
-//   GET  /api/v1/ticket_states     every state, with its state_type_id
+//   GET  /api/v1/ticket_states?expand=true   every state, with its state_type
 //   GET  /api/v1/groups            the groups the agent sees
 //   POST /api/v1/tickets/search    { condition, expand, sort_by, order_by, per_page, page }
 //   POST /api/v1/tickets           create a ticket with its first article
@@ -20,6 +20,8 @@
 //   - Paging is `per_page` + `page` (1000 per page at most); `offset` is
 //     ignored. `expand: true` returns an array of tickets with the names of
 //     their group, state, priority and owner beside the ids.
+//   - `/ticket_states` names the type of a state (`state_type: "open"`) only
+//     with `?expand=true`; the type ids are not fixed by any contract.
 //   - The unassigned owner is the system user, id 1, name "-".
 //   - An error answers JSON `{ error, error_human }`: 401 for a bad token,
 //     422 for an unknown group on creation, 404 for an unknown route.
@@ -165,8 +167,9 @@ export class ZammadClient {
     return data;
   }
 
+  // Without `expand`, a state has its state_type_id but not the name of its type.
   ticketStates() {
-    return this.list('/ticket_states');
+    return this.list('/ticket_states?expand=true');
   }
 
   groups() {

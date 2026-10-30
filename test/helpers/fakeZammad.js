@@ -94,7 +94,7 @@ export class FakeZammad {
   }
 
   handle(url, { method = 'GET', headers = {}, json: body } = {}) {
-    const { pathname } = new URL(url);
+    const { pathname, searchParams } = new URL(url);
     this.requests.push({ method, path: pathname, body });
     if (this.override) {
       return this.override;
@@ -110,7 +110,15 @@ export class FakeZammad {
       case 'GET /users/me':
         return json(200, this.me);
       case 'GET /ticket_states':
-        return json(200, this.states);
+        // The names of the types come with `expand` only, as on the real server.
+        return json(
+          200,
+          searchParams.get('expand') === 'true'
+            ? this.states
+            : this.states.map((state) =>
+                Object.fromEntries(Object.entries(state).filter(([key]) => key !== 'state_type')),
+              ),
+        );
       case 'GET /groups':
         return json(200, this.groups);
       case 'POST /tickets/search': {
