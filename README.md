@@ -49,10 +49,10 @@ Install it in Gladys: **Integrations** → **Install from GitHub** →
 
 The container reads Zammad on its own timer (1 to 10 minutes, 2 by default),
 and also wakes up at the next escalation time and at local midnight. Each
-reading calls `GET /api/v1/users/me`, `/ticket_states`, `/groups`, and two
+reading calls `GET /api/v1/users/me`, `/ticket_states`, `/groups`, and three
 `POST /api/v1/tickets/search` with a `condition` (the selector of the Zammad
-overviews, which works without Elasticsearch): the open tickets, and the
-tickets created since midnight. Counters are published only when they change
+overviews, which works without Elasticsearch): the open tickets, the
+escalated ones, and the tickets created since midnight. Counters are published only when they change
 (and every 12 h), devices with `should_poll: false`.
 
 New tickets are those above the highest ticket id already seen; escalations
@@ -80,7 +80,8 @@ with a path prefix.
 
 - Reads only, apart from creating tickets: no answer, assignment or closing.
 - A new ticket triggers its scene at the next reading (no Zammad webhook).
-- 1000 tickets at most per search.
+- 1000 tickets at most per search (the oldest open ones are left out; the
+  escalated ones are read apart).
 - The priority filter of the triggers offers the default priorities of
   Zammad.
 

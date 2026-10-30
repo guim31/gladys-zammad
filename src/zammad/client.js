@@ -177,20 +177,22 @@ export class ZammadClient {
   }
 
   /**
-   * Every ticket matching a condition, newest first, page after page: beyond
-   * the last page, the oldest ones are left out, never a new ticket.
+   * Every ticket matching a condition, page after page; newest first by
+   * default, so that beyond the last page the oldest ones are left out, never
+   * a new ticket. A ticket seen on two pages (the list moved between two
+   * requests) is kept once.
    * @returns {Promise<{ tickets: object[], truncated: boolean }>}
    */
-  async searchTickets(condition) {
-    const tickets = [];
+  async searchTickets(condition, { sortBy = 'id', orderBy = 'desc' } = {}) {
+    const byId = new Map();
     for (let page = 1; page <= MAX_PAGES; page += 1) {
       const data = await this.call('/tickets/search', {
         method: 'POST',
         json: {
           condition,
           expand: true,
-          sort_by: 'id',
-          order_by: 'desc',
+          sort_by: sortBy,
+          order_by: orderBy,
           per_page: PER_PAGE,
           page,
         },
@@ -198,12 +200,14 @@ export class ZammadClient {
       if (!Array.isArray(data)) {
         throw new ZammadError(ERROR_KINDS.NOT_ZAMMAD, 'no list in /tickets/search', 200);
       }
-      tickets.push(...data);
+      for (const ticket of data) {
+        byId.set(ticket?.id, ticket);
+      }
       if (data.length < PER_PAGE) {
-        return { tickets, truncated: false };
+        return { tickets: [...byId.values()], truncated: false };
       }
     }
-    return { tickets, truncated: true };
+    return { tickets: [...byId.values()], truncated: true };
   }
 
   /**

@@ -87,3 +87,27 @@ test('a command from Gladys writes one line; never the token, even at debug', as
   await refused.hub.poll();
   assert.ok(!logs.texts().join('\n').includes('secret-wrong'), 'never a refused token');
 });
+
+test('a wrong token then a right one: the next outage is still logged', async (t) => {
+  const logs = captureLogs(t);
+  const w = await world(t, { config: { ...BASE_CONFIG, token: 'wrong' } });
+  await w.fake.configUpdated(BASE_CONFIG);
+  assert.equal(w.fake.connectionStatus.connected, true);
+  logs.clear();
+  w.server.online = false;
+  await w.hub.poll();
+  assert.equal(logs.lines.length, 1, 'the outage after the fix is logged');
+});
+
+test('a ticket creation refused by Zammad is logged with its reason', async (t) => {
+  const logs = captureLogs(t);
+  const w = await world(t);
+  logs.clear();
+  w.server.override = {
+    status: 422,
+    headers: {},
+    body: JSON.stringify({ error: "No lookup value found for 'priority'" }),
+  };
+  await w.fake.sceneAction('create_ticket', { title: 'x' });
+  assert.match(logs.texts().join('\n'), /Ticket creation failed: HTTP 422 No lookup value/);
+});

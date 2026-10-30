@@ -232,7 +232,9 @@ code de ce dépôt. Compléter ce fichier quand un nouveau piège est découvert
   une `query` du genre `state.name:new` rend `[]` sans lui. Pagination par `per_page` + `page` (1000 au plus,
   `CanPaginate::Pagination`) ; `offset` est **ignoré**. `expand: true` rend un tableau de tickets avec les noms
   (`group`, `state`, `priority`, `owner`, `customer`) à côté des ids ; `only_total_count: true` rend
-  `{ total_count }`. Opérateurs utilisés : `is` sur `ticket.state_id`, `after (absolute)` sur `ticket.created_at`.
+  `{ total_count }`. Opérateurs utilisés (vérifiés sur le vrai serveur) : `is` sur `ticket.state_id`, `after (absolute)` sur
+  `ticket.created_at`, `before (absolute)` sur `ticket.escalation_at` (avec `sort_by: "escalation_at"`). Les
+  escaladés sont lus **à part** : au-delà de 1000 ouverts, la troncature coupe les plus anciens, donc eux.
 - **États** : `GET /ticket_states?expand=true` donne `state_type` (`new`, `open`, `pending reminder`,
   `pending action`, `closed`, `merged`) ; les ids et noms d'états sont modifiables, les types non. Zammad met
   `escalation_at` à `null` sur un état `ignore_escalation` (les deux « pending »).

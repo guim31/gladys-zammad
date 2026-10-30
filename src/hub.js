@@ -181,6 +181,8 @@ export class ZammadHub {
       previous.allowSelfSigned === config.allowSelfSigned;
     if (!same) {
       this.reset();
+      // A failure of the previous settings must not mute the new ones.
+      this.warned.clear();
       this.client =
         config.url && config.token
           ? new ZammadClient({
@@ -221,13 +223,14 @@ export class ZammadHub {
     }
     const now = this.now();
     // `readAt`: a moment that passed during the reading is still ahead of it.
+    // Both are after `readAt` by construction; one already passed now (a slow
+    // reading) gives the shortest delay.
     const moments = [localDay(readAt, this.timeZone).end];
     const escalation = nextEscalation(this.open, readAt);
     if (escalation !== null) {
       moments.push(escalation);
     }
-    const ahead = moments.filter((moment) => moment + this.timings.wakeSlackMs > now);
-    const wake = ahead.length === 0 ? 0 : Math.min(...ahead) - now + this.timings.wakeSlackMs;
+    const wake = Math.min(...moments) - now + this.timings.wakeSlackMs;
     return Math.max(this.timings.minDelayMs, Math.min(this.config.pollIntervalMs, wake));
   }
 
@@ -271,9 +274,17 @@ export class ZammadHub {
       if (states.size === 0) {
         throw new ZammadError(ERROR_KINDS.NOT_ZAMMAD, 'no active ticket state', 200);
       }
-      const open = await client.searchTickets({
-        'ticket.state_id': { operator: 'is', value: [...states.keys()].map(String) },
-      });
+      const active = { operator: 'is', value: [...states.keys()].map(String) };
+      const open = await client.searchTickets({ 'ticket.state_id': active });
+      // The escalated ones apart, oldest escalation first: beyond 1000 open
+      // tickets, the oldest open ones are cut, and they are the escalated ones.
+      const escalated = await client.searchTickets(
+        {
+          'ticket.state_id': active,
+          'ticket.escalation_at': { operator: 'before (absolute)', value: iso(now) },
+        },
+        { sortBy: 'escalation_at', orderBy: 'asc' },
+      );
       const created = await client.searchTickets({
         'ticket.created_at': { operator: 'after (absolute)', value: iso(this.createdSince(now)) },
       });
@@ -282,8 +293,11 @@ export class ZammadHub {
         // instance's tickets; the new one is being read.
         return;
       }
-      if (open.truncated || created.truncated) {
-        this.problem('truncated', 'More than 1000 tickets match: the counters stop at 1000');
+      if (open.truncated || created.truncated || escalated.truncated) {
+        this.problem(
+          'truncated',
+          'More than 1000 tickets match: the oldest are not counted (the escalated ones are)',
+        );
       } else {
         this.resolved('truncated');
       }
@@ -292,7 +306,10 @@ export class ZammadHub {
       this.me = { id: me.id };
       this.groups = groups;
       this.followed = this.follow(groups);
-      this.open = parse(open.tickets).filter((ticket) => ticket.kind !== null);
+      const openById = new Map(
+        parse([...escalated.tickets, ...open.tickets]).map((ticket) => [ticket.id, ticket]),
+      );
+      this.open = [...openById.values()].filter((ticket) => ticket.kind !== null);
       this.created = parse(created.tickets);
       this.readAt = now;
       this.recovered(now);
@@ -586,11 +603,17 @@ export class ZammadHub {
       escalated.push(key);
     }
 
+    // An escalation announced is remembered for the hour an event may be late:
+    // a ticket missing from one reading (pending for a while, a page that
+    // moved) does not fire again for the same escalation time.
+    const remembered = this.saved.escalated.filter(
+      (key) => !escalated.includes(key) && Number(key.split('@')[1]) >= late,
+    );
     this.saved = {
       scope,
       readAt: now,
       maxId: highest,
-      escalated: escalated.slice(-MAX_REMEMBERED),
+      escalated: [...remembered, ...escalated].slice(-MAX_REMEMBERED),
     };
     this.store.save(this.saved);
   }
@@ -703,6 +726,7 @@ export class ZammadHub {
         priority: String(priority ?? '').trim(),
       });
     } catch (err) {
+      logger.warn(`Ticket creation failed: ${err.message}`);
       throw this.explain(err);
     }
     logger.info(`Ticket ${created.number ?? created.id} created in group ${group.id} from Gladys`);

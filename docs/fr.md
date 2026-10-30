@@ -49,8 +49,10 @@ suivre, garde les choses claires.
    ouverts et en retard d'escalade, et les groupes suivis qui n'existent pas.
 4. Dans **Découverte**, ajoutez les appareils voulus.
 
-Chaque lecture coûte cinq petites requêtes (l'utilisateur, les états, les
-groupes, les tickets ouverts et ceux créés aujourd'hui), 1000 tickets au plus
+Chaque lecture coûte six petites requêtes (l'utilisateur, les états, les
+groupes, les tickets ouverts, ceux en retard d'escalade et ceux créés
+aujourd'hui), et une de plus par centaine de tickets au-delà des 100 premiers
+d'une recherche, 1000 tickets au plus
 par recherche.
 
 ## Appareils
@@ -143,7 +145,9 @@ l'heure d'escalade aussi pour le second.
 - Lecture toutes les 1 à 10 minutes : un nouveau ticket déclenche sa scène à
   la lecture suivante, pas à l'instant (les webhooks de Zammad ne servent
   pas).
-- 1000 tickets au plus par recherche : au-delà, les compteurs s'arrêtent à 1000.
+- 1000 tickets au plus par recherche : au-delà, les tickets ouverts les plus
+  anciens ne sont pas comptés. Ceux en retard d'escalade sont lus à part, et
+  toujours comptés.
 - Le filtre de priorité propose les priorités par défaut de Zammad ; une
   priorité renommée ne s'y choisit pas.
 - Un ticket créé pendant un arrêt de plus d'une heure de l'intégration ou de

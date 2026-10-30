@@ -49,8 +49,10 @@ der zu verfolgenden Gruppen, hält alles übersichtlich.
    eskaliert sind, und die verfolgten Gruppen, die es nicht gibt.
 4. Füge unter **Entdeckung** die gewünschten Geräte hinzu.
 
-Jede Abfrage kostet fünf kleine Anfragen (der Benutzer, die Status, die
-Gruppen, die offenen und die heute erstellten Tickets), höchstens 1000
+Jede Abfrage kostet sechs kleine Anfragen (der Benutzer, die Status, die
+Gruppen, die offenen, die eskalierten und die heute erstellten Tickets) und
+eine weitere je 100 Tickets über die ersten 100 einer Suche hinaus, höchstens
+1000
 Tickets pro Suche.
 
 ## Geräte
@@ -141,8 +143,9 @@ Ticket-Adresse weiter; beim zweiten auch die Eskalationszeit.
 
 - Abfrage alle 1 bis 10 Minuten: Ein neues Ticket löst seine Szene bei der
   nächsten Abfrage aus, nicht sofort (Zammad-Webhooks werden nicht genutzt).
-- Höchstens 1000 Tickets pro Suche: Darüber bleiben die Zähler bei 1000
-  stehen.
+- Höchstens 1000 Tickets pro Suche: Darüber werden die ältesten offenen
+  Tickets nicht gezählt. Die eskalierten werden getrennt gelesen und immer
+  gezählt.
 - Der Prioritätsfilter bietet die Standardprioritäten von Zammad an;
   umbenannte Prioritäten lassen sich dort nicht wählen.
 - Ein Ticket, das erstellt wird, während die Integration oder Zammad länger

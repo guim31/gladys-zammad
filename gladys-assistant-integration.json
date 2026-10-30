@@ -145,10 +145,10 @@
         "es": "Intervalo de actualización"
       },
       "description": {
-        "en": "How often Zammad is read (five requests). Escalation times and midnight are always followed on time.",
-        "fr": "Fréquence de lecture de Zammad (cinq requêtes). Les escalades et minuit sont toujours suivis à l'heure.",
-        "de": "Wie oft Zammad gelesen wird (fünf Anfragen). Eskalationszeiten und Mitternacht werden immer pünktlich verfolgt.",
-        "es": "Frecuencia de lectura de Zammad (cinco solicitudes). Las escaladas y la medianoche se siguen siempre a tiempo."
+        "en": "How often Zammad is read (six requests). Escalation times and midnight are always followed on time.",
+        "fr": "Fréquence de lecture de Zammad (six requêtes). Les escalades et minuit sont toujours suivis à l'heure.",
+        "de": "Wie oft Zammad gelesen wird (sechs Anfragen). Eskalationszeiten und Mitternacht werden immer pünktlich verfolgt.",
+        "es": "Frecuencia de lectura de Zammad (seis solicitudes). Las escaladas y la medianoche se siguen siempre a tiempo."
       },
       "required": false,
       "default": "120",

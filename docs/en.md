@@ -47,8 +47,9 @@ follow, keeps things clear.
    escalated, and the followed groups that do not exist.
 4. In **Discovery**, add the devices you want.
 
-Each reading costs five small requests (the user, the states, the groups, the
-open tickets and those created today), 1000 tickets at most per search.
+Each reading costs six small requests (the user, the states, the groups, the
+open tickets, the escalated ones and those created today), and one more per
+100 tickets beyond the first 100 of a search, 1000 tickets at most per search.
 
 ## Devices
 
@@ -134,7 +135,8 @@ customer and ticket address; the escalation time too for the second one.
 
 - Read every 1 to 10 minutes: a new ticket triggers its scene at the next
   reading, not instantly (Zammad webhooks are not used).
-- 1000 tickets at most per search: beyond, the counters stop at 1000.
+- 1000 tickets at most per search: beyond, the oldest open tickets are not
+  counted. The escalated ones are read apart, and always counted.
 - The priority filter offers the default priorities of Zammad; renamed
   priorities cannot be chosen there.
 - A ticket created while the integration or Zammad was stopped for more than

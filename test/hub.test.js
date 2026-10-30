@@ -74,6 +74,11 @@ test('the searches use the condition of the active states, paged', async (t) => 
     'ticket.state_id': { operator: 'is', value: ['1', '2', '3', '6'] },
   });
   assert.deepEqual(searches[1].body.condition, {
+    'ticket.state_id': { operator: 'is', value: ['1', '2', '3', '6'] },
+    'ticket.escalation_at': { operator: 'before (absolute)', value: '2026-10-30T12:13:30.000Z' },
+  });
+  assert.deepEqual([searches[1].body.sort_by, searches[1].body.order_by], ['escalation_at', 'asc']);
+  assert.deepEqual(searches[2].body.condition, {
     'ticket.created_at': { operator: 'after (absolute)', value: '2026-10-29T23:00:00.000Z' },
   });
   assert.equal(searches[0].body.expand, true);
@@ -278,4 +283,47 @@ test('a Zammad hosted by its makers is a cloud device', async (t) => {
   assert.equal(w.hub.transport(), 'cloud');
   w.hub.config = { ...w.hub.config, url: 'https://helpdesk.example.org' };
   assert.equal(w.hub.transport(), 'local');
+});
+
+test('beyond 1000 open tickets, the escalated ones are still counted and announced', async (t) => {
+  const clock = createClock();
+  const w = await world(t, { clock });
+  for (let i = 0; i < 1100; i += 1) {
+    w.server.addTicket({ title: `Ticket ${i}` });
+  }
+  clock.advance(60_000); // 20006 escalates
+  await w.hub.poll();
+  assert.equal(w.fake.lastState(instance(w.gladys).feature('escalated')), 3);
+  assert.ok(
+    w.fake.sceneEvents.some(
+      (event) => event.key === 'ticket_escalated' && event.data.number === '20006',
+    ),
+  );
+});
+
+test('an escalated ticket missing from one reading does not fire twice', async (t) => {
+  const clock = createClock();
+  const w = await world(t, { clock });
+  clock.advance(60_000);
+  await w.hub.poll();
+  assert.equal(w.fake.sceneEvents.length, 1);
+  // Pending for a while (Zammad clears escalation_at), then open again with
+  // the same escalation time: no new event.
+  const ticket = w.server.tickets.get(6);
+  const { escalation_at: at } = ticket;
+  Object.assign(ticket, { state_id: 3, escalation_at: null });
+  clock.advance(60_000);
+  await w.hub.poll();
+  Object.assign(ticket, { state_id: 1, escalation_at: at });
+  clock.advance(60_000);
+  await w.hub.poll();
+  assert.equal(w.fake.sceneEvents.length, 1);
+});
+
+test('a reading slower than an escalation wakes up soon, not after the interval', async (t) => {
+  const clock = createClock(Date.UTC(2026, 9, 30, 12, 14, 9));
+  const w = await world(t, { clock, config: { ...BASE_CONFIG, poll_interval: '600' } });
+  // The reading started at 12:14:09, 20006 escalates at 12:14:09.866, it is now 12:14:15.
+  clock.advance(6_000);
+  assert.equal(w.hub.nextDelay(Date.UTC(2026, 9, 30, 12, 14, 9)), 10_000);
 });

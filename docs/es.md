@@ -47,8 +47,10 @@ los grupos que se siguen, lo mantiene todo claro.
    y escalados, y los grupos seguidos que no existen.
 4. En **Descubrimiento**, añada los dispositivos que desee.
 
-Cada lectura cuesta cinco pequeñas solicitudes (el usuario, los estados, los
-grupos, los tickets abiertos y los creados hoy), 1000 tickets como máximo por
+Cada lectura cuesta seis pequeñas solicitudes (el usuario, los estados, los
+grupos, los tickets abiertos, los escalados y los creados hoy), y una más por
+cada 100 tickets más allá de los 100 primeros de una búsqueda, 1000 tickets
+como máximo por
 búsqueda.
 
 ## Dispositivos
@@ -139,8 +141,8 @@ la hora de escalada para el segundo.
 
 - Lectura cada 1 a 10 minutos: un nuevo ticket dispara su escena en la
   siguiente lectura, no al instante (no se usan los webhooks de Zammad).
-- 1000 tickets como máximo por búsqueda: por encima, los contadores se
-  detienen en 1000.
+- 1000 tickets como máximo por búsqueda: por encima, los tickets abiertos más
+  antiguos no se cuentan. Los escalados se leen aparte y siempre se cuentan.
 - El filtro de prioridad ofrece las prioridades predeterminadas de Zammad; una
   prioridad renombrada no se puede elegir ahí.
 - Un ticket creado mientras la integración o Zammad estuvieron detenidos más

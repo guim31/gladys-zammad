@@ -86,6 +86,10 @@ export class FakeZammad {
         if (!(Date.parse(ticket.created_at) > Date.parse(rule.value))) {
           return false;
         }
+      } else if (field === 'ticket.escalation_at' && rule.operator === 'before (absolute)') {
+        if (!(ticket.escalation_at && Date.parse(ticket.escalation_at) < Date.parse(rule.value))) {
+          return false;
+        }
       } else {
         throw new Error(`fake Zammad: condition ${field} ${rule.operator} not supported`);
       }
@@ -126,7 +130,11 @@ export class FakeZammad {
         const page = Number(body.page ?? 1);
         const found = [...this.tickets.values()]
           .filter((ticket) => this.matches(ticket, body.condition))
-          .sort((a, b) => (body.order_by === 'desc' ? b.id - a.id : a.id - b.id));
+          .sort((a, b) => {
+            const key = (ticket) =>
+              body.sort_by === 'escalation_at' ? Date.parse(ticket.escalation_at) : ticket.id;
+            return body.order_by === 'desc' ? key(b) - key(a) : key(a) - key(b);
+          });
         return json(200, found.slice((page - 1) * perPage, page * perPage));
       }
       case 'POST /tickets': {
