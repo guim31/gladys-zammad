@@ -31,16 +31,22 @@ pushing.
 ## Architecture
 
 ```
-index.js                          SDK wiring only: handlers registered before connect()
-src/devices/index.js              registry of the device blueprints + dispatch helpers
-src/devices/<type>.js             one device type per file (buildDevice, onPoll, onSetValue...)
-src/scenes.js                     scene action handlers (manifest `scene_actions`)
-src/widgets.js                    dashboard widget handlers (manifest `widgets`)
+index.js                          SDK wiring only: src/app.js registers the handlers before connect()
+src/app.js                        every SDK handler -> the hub (also used by the tests)
+src/hub.js                        reading timer, states, scene events, ticket creation, deduplicated logs
+src/devices.js                    instance and group devices: counters, names (4 languages), states
+src/zammad/client.js              Zammad REST client (/api/v1, Token token=…), errors by kind, paged search
+src/zammad/http.js                node:http/https request (self-signed certificates on request)
+src/zammad/model.js               states, groups, tickets; counters; local day; lookup by id or name
+src/scenes.js                     scene action create_ticket
+src/widgets.js                    dashboard widget `open_tickets` (manifest `widgets`)
+src/texts.js                      connection, error, report and action texts (4 languages)
 src/config.js                     DEFAULT_CONFIG (mirrors the manifest defaults) + normalization
-src/weather.js                    example driver (Open-Meteo)
+src/store.js                      /data/zammad-state.json (instance, last reading, highest id, escalations)
 gladys-assistant-integration.json manifest: name, config_schema, actions, image...
-docs/en.md, docs/fr.md            user documentation, re-hosted by Gladys (mandatory)
+docs/{en,fr,de,es}.md             user documentation, re-hosted by Gladys (en and fr mandatory)
 test/                             node --test, against the SDK's fake Gladys (integration-sdk/testing)
+                                  and helpers/fakeZammad.js (built from test/fixtures/zammad)
 .github/scripts/release.mjs       release helpers (manifest bump, changelog), tested in test/
 ```
 
@@ -70,8 +76,9 @@ test/                             node --test, against the SDK's fake Gladys (in
   `type: "provider"`: 5.1.0). `test/manifest.test.js` ties the manifest to the
   code (defaults, action, scene and widget handlers): change both sides
   together.
-- **User-facing text** is bilingual (English and French): action messages,
-  manifest texts, and `docs/en.md` / `docs/fr.md`, kept in sync.
+- **User-facing text** exists in English, French, German and Spanish: action
+  messages, widget content, feature names, manifest texts, and
+  `docs/{en,fr,de,es}.md`, kept in sync (`test/i18n.test.js`).
 - **Style.** Prettier formats, ESLint catches mistakes. Comments explain why,
   in English. Tests never touch the network.
 
@@ -214,6 +221,37 @@ code de ce dépôt. Compléter ce fichier quand un nouveau piège est découvert
 - Les filtres de scène ne font qu'égalité et appartenance : un seuil reste le travail d'un capteur.
 - **Les clés de widgets, de déclencheurs et d'actions sont figées une fois publiées.**
 - `gladys_version` `>=5.1.0` dès qu'il y a widgets, déclencheurs ou actions de scène.
+
+## Zammad (propre à ce dépôt)
+
+- **API** vérifiée sur `ghcr.io/zammad/zammad` **7.2.2** + PostgreSQL 17, Redis, memcached en Docker le 30/10/2026,
+  **sans Elasticsearch**. Jeton personnel en `Authorization: Token token=…`, permission `ticket.agent` (suffit pour
+  `users/me`, `ticket_states`, `groups`, la recherche et la création : politiques `Controllers::*Policy` lues
+  dans l'image).
+- **Recherche** : `POST /api/v1/tickets/search` avec `condition` (le sélecteur des vues) marche sans Elasticsearch ;
+  une `query` du genre `state.name:new` rend `[]` sans lui. Pagination par `per_page` + `page` (1000 au plus,
+  `CanPaginate::Pagination`) ; `offset` est **ignoré**. `expand: true` rend un tableau de tickets avec les noms
+  (`group`, `state`, `priority`, `owner`, `customer`) à côté des ids ; `only_total_count: true` rend
+  `{ total_count }`. Opérateurs utilisés (vérifiés sur le vrai serveur) : `is` sur `ticket.state_id`, `after (absolute)` sur
+  `ticket.created_at`, `before (absolute)` sur `ticket.escalation_at` (avec `sort_by: "escalation_at"`). Les
+  escaladés sont lus **à part** : au-delà de 1000 ouverts, la troncature coupe les plus anciens, donc eux.
+- **États** : `GET /ticket_states?expand=true` donne `state_type` (`new`, `open`, `pending reminder`,
+  `pending action`, `closed`, `merged`) ; les ids et noms d'états sont modifiables, les types non. Zammad met
+  `escalation_at` à `null` sur un état `ignore_escalation` (les deux « pending »).
+- **Escalade** : seulement par une **SLA** avec un calendrier ; un ticket créé avant la SLA garde
+  `escalation_at: null` jusqu'à sa prochaine modification. Le déclencheur part une fois par couple
+  (ticket, `escalation_at`) : une réponse qui fixe une nouvelle heure peut le relancer.
+- **Propriétaire** : un ticket non assigné appartient à l'utilisateur système **id 1** (`owner: "-"`).
+- **Création** : `POST /tickets` `{ title, group (nom), customer_id, article: { body, type: "note", internal } }` ;
+  `customer_id` accepte un id ou `guess:<e-mail>` (crée le client s'il n'existe pas) ; groupe inconnu → **422**
+  `No lookup value found for 'group'`. Réponse **201** sans les noms d'`expand`.
+- **Nouveaux tickets** : ids au-delà du plus grand déjà vu, cherchés parmi les tickets créés depuis
+  `min(minuit, dernière lecture − 5 min)`, donc même fermés entre deux lectures ; plus d'une heure de retard :
+  pas d'évènement.
+- Pour tester : l'image démarre sans compose avec `zammad-init` puis `zammad-railsserver` (port 3000, l'API sans
+  nginx) ; `AUTOWIZARD_JSON` échoue (`tmp/auto_wizard.json` introuvable) : créer agent, jeton (`Token.create!`
+  `action: 'api'`, `persistent: true`, `preferences: { permission: ['ticket.agent'] }`), calendrier et SLA par
+  `bundle exec rails r`.
 
 ## Store
 

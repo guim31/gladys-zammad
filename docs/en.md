@@ -1,61 +1,144 @@
-# Demo Devices Template
+# Zammad
 
-This is the user documentation of the integration. Gladys re-hosts this file
-and shows a permanent **Documentation** link to it in the Configuration screen
-(in the user's language, with English as the fallback) — it is when
-configuring that the user needs it most. Keep the short onboarding hints in
-the `section` blocks of the manifest `config_schema`; put the long
-step-by-step (screenshots, troubleshooting…) here.
+Bring your [Zammad](https://zammad.org) helpdesk into Gladys: the number of
+open, new, pending and escalated tickets, the unassigned ones, those assigned
+to you and those created today, for the whole instance and for the groups you
+choose. A scene reacts to a new ticket or to a ticket that passed its SLA
+escalation time, another one opens a ticket from a sensor or a button, and the
+dashboard lists the latest open tickets.
 
-## What you get
+> **Feedback welcome.** This integration was tested against a real Zammad
+> server (Docker image `ghcr.io/zammad/zammad` 7.2.2, October 2026), not yet
+> in everyday use. If something does not work as described, please say so on
+> the [Gladys forum](https://community.gladysassistant.com) or in the
+> [issues](https://github.com/guim31/gladys-zammad/issues).
 
-Six demo devices show up after installation: a weather station (real data
-from Open-Meteo), a switch, a dimmable light, a smart plug with power
-metering, a motion sensor and a camera.
+## What you need
 
-## Configuration
+- Gladys Assistant 5.1.0 or later.
+- A **Zammad** reachable from Gladys: self-hosted, or hosted by Zammad
+  (`*.zammad.com`). Tested with Zammad 7.2; Elasticsearch is not needed.
+- A **personal access token** of a Zammad agent. In Zammad: your avatar →
+  **Profile** → **Token Access** → **Create**, with the permission **Agent
+  tickets** (`ticket.agent`). Copy it: Zammad shows it only once. If the menu
+  is missing, an administrator enables **API Token Access** in **System** →
+  **API**.
 
-1. Open the **Configuration** tab of the integration.
-2. Set the **latitude** and **longitude** the demo weather station should
-   observe (they default to Paris), and pick your temperature unit.
-   The **refresh interval** sets how often the weather station and the
-   plug's power are read: every 5 minutes by default, every minute at most.
-3. Save: the devices appear in the **Discovery** tab, ready to be added.
+The integration sees the tickets of the groups this agent has access to, and
+creates tickets **as this agent**. A dedicated agent, member of the groups to
+follow, keeps things clear.
 
-The **Prefer the local connection** toggle drives the demo plug: it reports
-the channel it actually uses as a badge (local or cloud), with an orange dot
-when it runs degraded (local refused, cloud fallback).
+## Set up
 
-## Actions
+1. In Gladys, **Integrations** → install **Zammad**.
+2. In its **Configuration** screen:
+   - **Address**: the address of Zammad, as in the browser, e.g.
+     `https://helpdesk.example.org` (with `:port` if needed);
+   - **Access token**: the token created above;
+   - **Followed groups** (optional): group names separated by commas, e.g.
+     `Users, Hardware`. Each one gets a device of its own with its counters.
+     Empty: the instance device only;
+   - **Accept self-signed certificates**: only for your own server with a
+     self-signed certificate;
+   - **Refresh interval**: 1, 2 (default), 5 or 10 minutes;
+   - **Language of the feature names**: the names given to the features when
+     a device is added (French by default).
+3. Click **Test the connection**: it tells how many tickets are open and
+   escalated, and the followed groups that do not exist.
+4. In **Discovery**, add the devices you want.
 
-- **Test the weather provider** — performs a live request to Open-Meteo and
-  shows the current temperature and humidity under the button.
-- **Identify a device** — pick one of your devices in the list and it will
-  signal itself (the demo light "blinks" in the logs).
+Each reading costs six small requests (the user, the states, the groups, the
+open tickets, the escalated ones and those created today), and one more per
+100 tickets beyond the first 100 of a search, 1000 tickets at most per search.
 
-## Scenes
+## Devices
 
-The integration adds its own cards to the scene editor (Gladys 5.1 or
-later), under the **Integrations** category:
+- **Zammad**: the whole instance (the groups of the agent).
+- **Zammad <group>**: one per followed group.
 
-- **Motion detected** (trigger) — starts the scene when a demo motion sensor
-  sees something move. Optionally pick the sensor and what moved (person,
-  animal); left empty, any detection matches. The following actions can
-  read what moved with `{{triggerEvent.data.target}}`.
-- **Identify a device** (action) — makes the chosen device signal itself.
-  It returns whether the device could signal itself, so the following
-  actions can depend on it.
+Features (counters, with history):
+
+| Feature                | Meaning                                                     |
+| ---------------------- | ----------------------------------------------------------- |
+| Open tickets           | state new, open, pending reminder or pending close          |
+| New tickets            | state new                                                   |
+| Pending tickets        | state pending reminder or pending close                     |
+| Escalated tickets      | open, past the escalation time of their SLA                 |
+| Unassigned tickets     | open, no owner                                              |
+| Tickets assigned to me | open, owned by the agent of the token (instance only)       |
+| Tickets created today  | created since midnight (time of Gladys), whatever its state |
+
+Escalation times come from the **SLAs** of Zammad: without an SLA, no ticket
+escalates. The counters move at each reading, at midnight and at the next
+escalation time.
 
 ## Dashboard
 
-Add the **Demo status** widget to a dashboard: it shows the live
-temperature of the weather station and the power of the office plug, the
-connection the plug currently uses (orange when degraded) and the observed
-location. Its **Identify the light** button makes the demo light signal
-itself.
+The **Open tickets** widget shows the 10 latest open tickets, with their
+number, title, state and group; escalated ones in red, new ones in orange.
+Above them, two tiles: open and escalated tickets.
+
+Settings: **Device** (empty: the whole instance; a group device: only that
+group) and **Show the counters** (untick to keep the list only).
+
+## Scenes
+
+### Triggers
+
+- **New Zammad ticket**: a ticket was created in a group of the agent, seen at
+  the next reading (even if it was closed meanwhile).
+- **Zammad ticket escalated**: an open ticket passed its SLA escalation time
+  (first response, update or solution). It fires once per escalation time: if
+  an answer sets a new time and that one passes too, it fires again.
+
+Both can be filtered by **Group** (exactly as written in Zammad) and
+**Priority** (the default priorities `1 low`, `2 normal`, `3 high`). They pass
+on to the scene the title, ticket number, ticket id, group, priority, state,
+customer and ticket address; the escalation time too for the second one.
+
+### Actions
+
+- **Create a Zammad ticket**: opens a ticket with a **Title**, in a **Group**
+  (name or id; empty: the first followed group, else the first group of the
+  agent), with a **Text** (empty: the title), a **Priority** (empty: the
+  default one of Zammad) and a **Customer e-mail** (empty: the agent of the
+  token; an unknown address creates the customer). The following steps get
+  the ticket id, ticket number, title, group and ticket address.
+
+### Scene ideas
+
+- A leak sensor in the server room: **Create a Zammad ticket** "Water
+  detected" in the `Hardware` group, priority `3 high`.
+- **Zammad ticket escalated** in group `Support`: flash the office light and
+  send a message with the title and the ticket address.
+- **New Zammad ticket** with priority `3 high` out of office hours: notify the
+  person on call.
 
 ## Troubleshooting
 
-The integration logs everything it does: check the integration logs from the
-Gladys UI (or `docker logs` on the host) with `LOG_LEVEL=debug` for the full
-detail.
+- **"access token refused"**: the token is wrong, expired or was deleted:
+  create a new one.
+- **"the token lacks the Agent tickets permission"**: create the token again
+  with the **Agent tickets** permission.
+- **"this address does not answer like Zammad"**: check the address; behind a
+  reverse proxy under a path, give that path too
+  (`https://example.org/zammad`).
+- **"redirected"**: give the `https://` address directly.
+- **"certificate refused"**: tick **Accept self-signed certificates** (your
+  own server only).
+- **No escalated ticket ever**: Zammad sets escalation times only through an
+  **SLA** (**Manage** → **SLAs**) with a calendar.
+- A group of **Followed groups** that does not exist is ignored: **Test the
+  connection** names it.
+
+## Limits
+
+- Read every 1 to 10 minutes: a new ticket triggers its scene at the next
+  reading, not instantly (Zammad webhooks are not used).
+- 1000 tickets at most per search: beyond, the oldest open tickets are not
+  counted. The escalated ones are read apart, and always counted.
+- The priority filter offers the default priorities of Zammad; renamed
+  priorities cannot be chosen there.
+- A ticket created while the integration or Zammad was stopped for more than
+  an hour does not trigger its scene.
+- Not affiliated with Zammad GmbH or the Zammad Foundation.

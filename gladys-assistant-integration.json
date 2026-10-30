@@ -1,177 +1,815 @@
 {
   "manifest_version": 1,
   "type": "device",
-  "name": "Demo Devices Template",
+  "name": "Zammad",
   "description": {
-    "en": "Starter template showing sensors, a switch, a dimmable light and a smart plug.",
-    "fr": "Template de démarrage : capteurs, interrupteur, lampe variable et prise connectée."
+    "en": "Zammad helpdesk: open, new, pending and escalated tickets, new ticket events, tickets from scenes.",
+    "fr": "Helpdesk Zammad : tickets ouverts, nouveaux, en attente et en retard, alertes, tickets par scène.",
+    "de": "Zammad-Helpdesk: offene, neue, wartende und eskalierte Tickets, Ereignisse, Tickets aus Szenen.",
+    "es": "Helpdesk Zammad: tickets abiertos, nuevos, pendientes y escalados, eventos, tickets desde escenas."
   },
   "version": "1.0.0",
-  "docker_image": "ghcr.io/gladysassistant/integration-template-js:1.0.0",
+  "docker_image": "ghcr.io/guim31/gladys-zammad:1.0.0",
   "gladys_version": ">=5.1.0",
-  "cover_image": "https://raw.githubusercontent.com/GladysAssistant/integration-template-js/master/cover.png",
-  "categories": ["lighting", "security", "environment"],
+  "cover_image": "https://raw.githubusercontent.com/guim31/gladys-zammad/main/cover.png",
+  "categories": ["services"],
   "transports": ["local", "cloud"],
   "config_schema": [
     {
       "key": "intro",
       "type": "section",
-      "label": { "en": "Getting started", "fr": "Pour commencer" },
+      "label": {
+        "en": "Your Zammad",
+        "fr": "Votre Zammad",
+        "de": "Dein Zammad",
+        "es": "Su Zammad"
+      },
       "description": {
-        "en": "The demo weather station reads real data from the free Open-Meteo API: pick the coordinates to observe. No account, no API key.",
-        "fr": "La station météo de démonstration lit de vraies données via l'API gratuite Open-Meteo : choisissez les coordonnées à observer. Pas de compte, pas de clé d'API."
+        "en": "A Zammad, self-hosted or hosted by Zammad. In Zammad: avatar, Profile, Token Access, Create, with the permission “Agent tickets” (ticket.agent). The counters are those of this agent's groups.",
+        "fr": "Un Zammad, auto-hébergé ou hébergé par Zammad. Dans Zammad : avatar, Profil, Accès par jeton, Créer, avec la permission « Tickets agent » (ticket.agent). Les compteurs sont ceux des groupes de cet agent.",
+        "de": "Ein Zammad, selbst gehostet oder von Zammad gehostet. In Zammad: Avatar, Profil, Token-Zugang, Erstellen, mit der Berechtigung „Agenten-Tickets“ (ticket.agent). Die Zähler sind die der Gruppen dieses Agenten.",
+        "es": "Un Zammad, autoalojado o alojado por Zammad. En Zammad: avatar, Perfil, Acceso por token, Crear, con el permiso «Tickets de agente» (ticket.agent). Los contadores son los de los grupos de este agente."
       },
       "links": [
         {
-          "url": "https://open-meteo.com/en/docs",
-          "label": { "en": "Open-Meteo documentation", "fr": "Documentation Open-Meteo" }
+          "url": "https://user-docs.zammad.org/en/latest/extras/profile-and-settings.html",
+          "label": {
+            "en": "Zammad documentation",
+            "fr": "Documentation de Zammad",
+            "de": "Zammad-Dokumentation",
+            "es": "Documentación de Zammad"
+          }
         }
       ]
     },
     {
-      "key": "latitude",
-      "type": "number",
-      "label": { "en": "Latitude", "fr": "Latitude" },
-      "description": {
-        "en": "Latitude used for the demo weather sensor.",
-        "fr": "Latitude utilisée par le capteur météo de démonstration."
+      "key": "url",
+      "type": "string",
+      "label": {
+        "en": "Address",
+        "fr": "Adresse",
+        "de": "Adresse",
+        "es": "Dirección"
       },
-      "placeholder": { "en": "e.g. 48.8566", "fr": "ex. 48.8566" },
+      "description": {
+        "en": "Address of Zammad, as in the browser, with https:// for HTTPS and :port if not the default.",
+        "fr": "Adresse de Zammad, comme dans le navigateur, avec https:// pour le HTTPS et :port s'il n'est pas celui par défaut.",
+        "de": "Adresse von Zammad wie im Browser, mit https:// für HTTPS und :Port, falls nicht der Standard.",
+        "es": "Dirección de Zammad, como en el navegador, con https:// para HTTPS y :puerto si no es el predeterminado."
+      },
+      "placeholder": {
+        "en": "e.g. https://helpdesk.example.org",
+        "fr": "ex. https://helpdesk.example.org",
+        "de": "z. B. https://helpdesk.example.org",
+        "es": "p. ej. https://helpdesk.example.org"
+      },
       "required": true,
-      "default": 48.8566,
-      "min": -90,
-      "max": 90
+      "default": ""
     },
     {
-      "key": "longitude",
-      "type": "number",
-      "label": { "en": "Longitude", "fr": "Longitude" },
-      "description": {
-        "en": "Longitude used for the demo weather sensor.",
-        "fr": "Longitude utilisée par le capteur météo de démonstration."
+      "key": "token",
+      "type": "secret",
+      "label": {
+        "en": "Access token",
+        "fr": "Jeton d'accès",
+        "de": "Zugriffstoken",
+        "es": "Token de acceso"
       },
-      "placeholder": { "en": "e.g. 2.3522", "fr": "ex. 2.3522" },
-      "required": true,
-      "default": 2.3522,
-      "min": -180,
-      "max": 180
+      "description": {
+        "en": "Profile, Token Access in Zammad, permission “Agent tickets”.",
+        "fr": "Profil, Accès par jeton dans Zammad, permission « Tickets agent ».",
+        "de": "Profil, Token-Zugang in Zammad, Berechtigung „Agenten-Tickets“.",
+        "es": "Perfil, Acceso por token en Zammad, permiso «Tickets de agente»."
+      },
+      "required": true
     },
     {
-      "key": "unit",
-      "type": "select",
-      "label": { "en": "Temperature unit", "fr": "Unité de température" },
+      "key": "options",
+      "type": "section",
+      "label": {
+        "en": "Options",
+        "fr": "Options",
+        "de": "Optionen",
+        "es": "Opciones"
+      }
+    },
+    {
+      "key": "groups",
+      "type": "string",
+      "label": {
+        "en": "Followed groups",
+        "fr": "Groupes suivis",
+        "de": "Verfolgte Gruppen",
+        "es": "Grupos seguidos"
+      },
+      "description": {
+        "en": "Names separated by commas: one more device per group, with its own counters. Empty: the instance device only.",
+        "fr": "Noms séparés par des virgules : un appareil de plus par groupe, avec ses compteurs. Vide : l'appareil de l'instance seul.",
+        "de": "Namen durch Kommas getrennt: ein weiteres Gerät pro Gruppe mit eigenen Zählern. Leer: nur das Gerät der Instanz.",
+        "es": "Nombres separados por comas: un dispositivo más por grupo, con sus contadores. Vacío: solo el dispositivo de la instancia."
+      },
+      "placeholder": {
+        "en": "e.g. Users, Hardware",
+        "fr": "ex. Users, Matériel",
+        "de": "z. B. Users, Hardware",
+        "es": "p. ej. Users, Hardware"
+      },
       "required": false,
-      "default": "celsius",
+      "default": ""
+    },
+    {
+      "key": "allow_self_signed",
+      "type": "boolean",
+      "label": {
+        "en": "Accept self-signed certificates",
+        "fr": "Accepter les certificats auto-signés",
+        "de": "Selbstsignierte Zertifikate akzeptieren",
+        "es": "Aceptar certificados autofirmados"
+      },
+      "description": {
+        "en": "For an https:// address whose certificate is self-signed. Tick only for your own server.",
+        "fr": "Pour une adresse en https:// dont le certificat est auto-signé. À cocher seulement pour votre propre serveur.",
+        "de": "Für eine https://-Adresse mit selbstsigniertem Zertifikat. Nur für deinen eigenen Server aktivieren.",
+        "es": "Para una dirección https:// con certificado autofirmado. Márquelo solo para su propio servidor."
+      },
+      "required": false,
+      "default": false
+    },
+    {
+      "key": "poll_interval",
+      "type": "select",
+      "label": {
+        "en": "Refresh interval",
+        "fr": "Intervalle de rafraîchissement",
+        "de": "Aktualisierungsintervall",
+        "es": "Intervalo de actualización"
+      },
+      "description": {
+        "en": "How often Zammad is read (six requests). Escalation times and midnight are always followed on time.",
+        "fr": "Fréquence de lecture de Zammad (six requêtes). Les escalades et minuit sont toujours suivis à l'heure.",
+        "de": "Wie oft Zammad gelesen wird (sechs Anfragen). Eskalationszeiten und Mitternacht werden immer pünktlich verfolgt.",
+        "es": "Frecuencia de lectura de Zammad (seis solicitudes). Las escaladas y la medianoche se siguen siempre a tiempo."
+      },
+      "required": false,
+      "default": "120",
       "options": [
-        { "value": "celsius", "label": { "en": "Celsius", "fr": "Celsius" } },
-        { "value": "fahrenheit", "label": { "en": "Fahrenheit", "fr": "Fahrenheit" } }
+        {
+          "value": "60",
+          "label": {
+            "en": "1 minute",
+            "fr": "1 minute",
+            "de": "1 Minute",
+            "es": "1 minuto"
+          }
+        },
+        {
+          "value": "120",
+          "label": {
+            "en": "2 minutes",
+            "fr": "2 minutes",
+            "de": "2 Minuten",
+            "es": "2 minutos"
+          }
+        },
+        {
+          "value": "300",
+          "label": {
+            "en": "5 minutes",
+            "fr": "5 minutes",
+            "de": "5 Minuten",
+            "es": "5 minutos"
+          }
+        },
+        {
+          "value": "600",
+          "label": {
+            "en": "10 minutes",
+            "fr": "10 minutes",
+            "de": "10 Minuten",
+            "es": "10 minutos"
+          }
+        }
       ]
     },
     {
-      "key": "poll_frequency",
-      "type": "number",
-      "label": { "en": "Refresh interval (s)", "fr": "Intervalle de rafraîchissement (s)" },
+      "key": "language",
+      "type": "select",
+      "label": {
+        "en": "Language of the feature names",
+        "fr": "Langue des noms de fonctionnalités",
+        "de": "Sprache der Funktionsnamen",
+        "es": "Idioma de los nombres de funciones"
+      },
       "description": {
-        "en": "How often sensors are polled, in seconds (one minute minimum).",
-        "fr": "Fréquence d'interrogation des capteurs, en secondes (une minute minimum)."
+        "en": "Names given to the features when a device is added, and texts sent to scenes.",
+        "fr": "Noms donnés aux fonctionnalités à l'ajout d'un appareil, et textes envoyés aux scènes.",
+        "de": "Namen der Funktionen beim Hinzufügen eines Geräts und an Szenen gesendete Texte.",
+        "es": "Nombres dados a las funciones al añadir un dispositivo y textos enviados a las escenas."
       },
       "required": false,
-      "default": 300,
-      "min": 60,
-      "max": 3600
+      "default": "fr",
+      "options": [
+        {
+          "value": "en",
+          "label": {
+            "en": "English",
+            "fr": "Anglais",
+            "de": "Englisch",
+            "es": "Inglés"
+          }
+        },
+        {
+          "value": "fr",
+          "label": {
+            "en": "French",
+            "fr": "Français",
+            "de": "Französisch",
+            "es": "Francés"
+          }
+        },
+        {
+          "value": "de",
+          "label": {
+            "en": "German",
+            "fr": "Allemand",
+            "de": "Deutsch",
+            "es": "Alemán"
+          }
+        },
+        {
+          "value": "es",
+          "label": {
+            "en": "Spanish",
+            "fr": "Espagnol",
+            "de": "Spanisch",
+            "es": "Español"
+          }
+        }
+      ]
     }
   ],
   "actions": [
     {
-      "key": "test_weather",
-      "label": { "en": "Test the weather provider", "fr": "Tester le fournisseur météo" },
+      "key": "test_connection",
+      "label": {
+        "en": "Test the connection",
+        "fr": "Tester la connexion",
+        "de": "Verbindung testen",
+        "es": "Probar la conexión"
+      },
+      "description": {
+        "en": "Reads Zammad now and reports what it finds.",
+        "fr": "Lit Zammad maintenant et indique ce qu'elle trouve.",
+        "de": "Liest Zammad jetzt und meldet, was gefunden wurde.",
+        "es": "Lee Zammad ahora e informa de lo que encuentra."
+      },
       "timeout_seconds": 30
-    },
-    {
-      "key": "identify",
-      "label": { "en": "Identify a device", "fr": "Identifier un appareil" },
-      "fields": [
-        {
-          "key": "device",
-          "type": "select",
-          "source": "devices",
-          "label": { "en": "Device", "fr": "Appareil" },
-          "required": true
-        }
-      ]
     }
   ],
   "scene_triggers": [
     {
-      "key": "motion_detected",
-      "label": { "en": "Motion detected", "fr": "Mouvement détecté" },
+      "key": "ticket_created",
+      "label": {
+        "en": "New Zammad ticket",
+        "fr": "Nouveau ticket Zammad",
+        "de": "Neues Zammad-Ticket",
+        "es": "Nuevo ticket de Zammad"
+      },
       "description": {
-        "en": "A demo motion sensor saw a person or an animal move.",
-        "fr": "Un détecteur de démonstration a vu bouger une personne ou un animal."
+        "en": "A ticket was created in a group of the agent (seen at the next reading).",
+        "fr": "Un ticket a été créé dans un groupe de l'agent (vu à la lecture suivante).",
+        "de": "Ein Ticket wurde in einer Gruppe des Agenten erstellt (bei der nächsten Abfrage gesehen).",
+        "es": "Se creó un ticket en un grupo del agente (visto en la siguiente lectura)."
       },
       "fields": [
         {
-          "key": "device",
-          "type": "select",
-          "source": "devices",
-          "label": { "en": "Sensor", "fr": "Détecteur" }
+          "key": "group",
+          "type": "string",
+          "label": {
+            "en": "Group (empty: any)",
+            "fr": "Groupe (vide : tous)",
+            "de": "Gruppe (leer: alle)",
+            "es": "Grupo (vacío: cualquiera)"
+          },
+          "description": {
+            "en": "Exactly as written in Zammad, e.g. Users.",
+            "fr": "Exactement comme dans Zammad, ex. Users.",
+            "de": "Genau wie in Zammad, z. B. Users.",
+            "es": "Exactamente como en Zammad, p. ej. Users."
+          }
         },
         {
-          "key": "target",
-          "type": "multi_select",
-          "label": { "en": "What moved", "fr": "Ce qui a bougé" },
+          "key": "priority",
+          "type": "select",
+          "label": {
+            "en": "Priority (empty: any)",
+            "fr": "Priorité (vide : toutes)",
+            "de": "Priorität (leer: alle)",
+            "es": "Prioridad (vacío: cualquiera)"
+          },
+          "description": {
+            "en": "The default priorities of Zammad.",
+            "fr": "Les priorités par défaut de Zammad.",
+            "de": "Die Standardprioritäten von Zammad.",
+            "es": "Las prioridades predeterminadas de Zammad."
+          },
           "options": [
-            { "value": "person", "label": { "en": "Person", "fr": "Personne" } },
-            { "value": "animal", "label": { "en": "Animal", "fr": "Animal" } }
+            {
+              "value": "1 low",
+              "label": {
+                "en": "1 low",
+                "fr": "1 basse",
+                "de": "1 niedrig",
+                "es": "1 baja"
+              }
+            },
+            {
+              "value": "2 normal",
+              "label": {
+                "en": "2 normal",
+                "fr": "2 normale",
+                "de": "2 normal",
+                "es": "2 normal"
+              }
+            },
+            {
+              "value": "3 high",
+              "label": {
+                "en": "3 high",
+                "fr": "3 haute",
+                "de": "3 hoch",
+                "es": "3 alta"
+              }
+            }
           ]
         }
       ],
       "variables": [
         {
-          "key": "target",
+          "key": "title",
           "type": "string",
-          "label": { "en": "What moved", "fr": "Ce qui a bougé" }
+          "label": {
+            "en": "Title",
+            "fr": "Titre",
+            "de": "Titel",
+            "es": "Título"
+          }
+        },
+        {
+          "key": "number",
+          "type": "string",
+          "label": {
+            "en": "Ticket number",
+            "fr": "Numéro du ticket",
+            "de": "Ticketnummer",
+            "es": "Número del ticket"
+          }
+        },
+        {
+          "key": "ticket_id",
+          "type": "string",
+          "label": {
+            "en": "Ticket id",
+            "fr": "Identifiant du ticket",
+            "de": "Ticket-ID",
+            "es": "Identificador del ticket"
+          }
+        },
+        {
+          "key": "group",
+          "type": "string",
+          "label": {
+            "en": "Group",
+            "fr": "Groupe",
+            "de": "Gruppe",
+            "es": "Grupo"
+          }
+        },
+        {
+          "key": "priority",
+          "type": "string",
+          "label": {
+            "en": "Priority",
+            "fr": "Priorité",
+            "de": "Priorität",
+            "es": "Prioridad"
+          }
+        },
+        {
+          "key": "state",
+          "type": "string",
+          "label": {
+            "en": "State",
+            "fr": "État",
+            "de": "Status",
+            "es": "Estado"
+          }
+        },
+        {
+          "key": "customer",
+          "type": "string",
+          "label": {
+            "en": "Customer",
+            "fr": "Client",
+            "de": "Kunde",
+            "es": "Cliente"
+          }
+        },
+        {
+          "key": "url",
+          "type": "string",
+          "label": {
+            "en": "Ticket address",
+            "fr": "Adresse du ticket",
+            "de": "Ticket-Adresse",
+            "es": "Dirección del ticket"
+          }
+        }
+      ]
+    },
+    {
+      "key": "ticket_escalated",
+      "label": {
+        "en": "Zammad ticket escalated",
+        "fr": "Ticket Zammad en retard d’escalade",
+        "de": "Zammad-Ticket eskaliert",
+        "es": "Ticket de Zammad escalado"
+      },
+      "description": {
+        "en": "An open ticket passed its SLA escalation time (first response, update or solution).",
+        "fr": "Un ticket ouvert a dépassé son délai d'escalade SLA (première réponse, mise à jour ou résolution).",
+        "de": "Ein offenes Ticket hat seine SLA-Eskalationszeit überschritten (Erstantwort, Aktualisierung oder Lösung).",
+        "es": "Un ticket abierto superó su plazo de escalada SLA (primera respuesta, actualización o solución)."
+      },
+      "fields": [
+        {
+          "key": "group",
+          "type": "string",
+          "label": {
+            "en": "Group (empty: any)",
+            "fr": "Groupe (vide : tous)",
+            "de": "Gruppe (leer: alle)",
+            "es": "Grupo (vacío: cualquiera)"
+          },
+          "description": {
+            "en": "Exactly as written in Zammad, e.g. Users.",
+            "fr": "Exactement comme dans Zammad, ex. Users.",
+            "de": "Genau wie in Zammad, z. B. Users.",
+            "es": "Exactamente como en Zammad, p. ej. Users."
+          }
+        },
+        {
+          "key": "priority",
+          "type": "select",
+          "label": {
+            "en": "Priority (empty: any)",
+            "fr": "Priorité (vide : toutes)",
+            "de": "Priorität (leer: alle)",
+            "es": "Prioridad (vacío: cualquiera)"
+          },
+          "description": {
+            "en": "The default priorities of Zammad.",
+            "fr": "Les priorités par défaut de Zammad.",
+            "de": "Die Standardprioritäten von Zammad.",
+            "es": "Las prioridades predeterminadas de Zammad."
+          },
+          "options": [
+            {
+              "value": "1 low",
+              "label": {
+                "en": "1 low",
+                "fr": "1 basse",
+                "de": "1 niedrig",
+                "es": "1 baja"
+              }
+            },
+            {
+              "value": "2 normal",
+              "label": {
+                "en": "2 normal",
+                "fr": "2 normale",
+                "de": "2 normal",
+                "es": "2 normal"
+              }
+            },
+            {
+              "value": "3 high",
+              "label": {
+                "en": "3 high",
+                "fr": "3 haute",
+                "de": "3 hoch",
+                "es": "3 alta"
+              }
+            }
+          ]
+        }
+      ],
+      "variables": [
+        {
+          "key": "title",
+          "type": "string",
+          "label": {
+            "en": "Title",
+            "fr": "Titre",
+            "de": "Titel",
+            "es": "Título"
+          }
+        },
+        {
+          "key": "number",
+          "type": "string",
+          "label": {
+            "en": "Ticket number",
+            "fr": "Numéro du ticket",
+            "de": "Ticketnummer",
+            "es": "Número del ticket"
+          }
+        },
+        {
+          "key": "ticket_id",
+          "type": "string",
+          "label": {
+            "en": "Ticket id",
+            "fr": "Identifiant du ticket",
+            "de": "Ticket-ID",
+            "es": "Identificador del ticket"
+          }
+        },
+        {
+          "key": "group",
+          "type": "string",
+          "label": {
+            "en": "Group",
+            "fr": "Groupe",
+            "de": "Gruppe",
+            "es": "Grupo"
+          }
+        },
+        {
+          "key": "priority",
+          "type": "string",
+          "label": {
+            "en": "Priority",
+            "fr": "Priorité",
+            "de": "Priorität",
+            "es": "Prioridad"
+          }
+        },
+        {
+          "key": "state",
+          "type": "string",
+          "label": {
+            "en": "State",
+            "fr": "État",
+            "de": "Status",
+            "es": "Estado"
+          }
+        },
+        {
+          "key": "customer",
+          "type": "string",
+          "label": {
+            "en": "Customer",
+            "fr": "Client",
+            "de": "Kunde",
+            "es": "Cliente"
+          }
+        },
+        {
+          "key": "url",
+          "type": "string",
+          "label": {
+            "en": "Ticket address",
+            "fr": "Adresse du ticket",
+            "de": "Ticket-Adresse",
+            "es": "Dirección del ticket"
+          }
+        },
+        {
+          "key": "escalation_at",
+          "type": "string",
+          "label": {
+            "en": "Escalation time (ISO 8601)",
+            "fr": "Heure d'escalade (ISO 8601)",
+            "de": "Eskalationszeit (ISO 8601)",
+            "es": "Hora de escalada (ISO 8601)"
+          }
         }
       ]
     }
   ],
   "scene_actions": [
     {
-      "key": "identify_device",
-      "label": { "en": "Identify a device", "fr": "Identifier un appareil" },
-      "description": {
-        "en": "Make a device signal itself (the demo light blinks).",
-        "fr": "Fait se signaler un appareil (la lampe de démonstration clignote)."
+      "key": "create_ticket",
+      "label": {
+        "en": "Create a Zammad ticket",
+        "fr": "Créer un ticket Zammad",
+        "de": "Zammad-Ticket erstellen",
+        "es": "Crear un ticket de Zammad"
       },
-      "timeout_seconds": 15,
+      "description": {
+        "en": "Opens a ticket in a group, as the agent of the token.",
+        "fr": "Ouvre un ticket dans un groupe, au nom de l'agent du jeton.",
+        "de": "Eröffnet ein Ticket in einer Gruppe, als Agent des Tokens.",
+        "es": "Abre un ticket en un grupo, como el agente del token."
+      },
+      "timeout_seconds": 20,
       "fields": [
         {
-          "key": "device",
+          "key": "title",
+          "type": "string",
+          "required": true,
+          "label": {
+            "en": "Title",
+            "fr": "Titre",
+            "de": "Titel",
+            "es": "Título"
+          }
+        },
+        {
+          "key": "group",
+          "type": "string",
+          "label": {
+            "en": "Group (empty: the first one)",
+            "fr": "Groupe (vide : le premier)",
+            "de": "Gruppe (leer: die erste)",
+            "es": "Grupo (vacío: el primero)"
+          },
+          "description": {
+            "en": "Name or id; empty: the first followed group, else the first group of the agent.",
+            "fr": "Nom ou numéro ; vide : le premier groupe suivi, sinon le premier groupe de l'agent.",
+            "de": "Name oder ID; leer: die erste verfolgte Gruppe, sonst die erste Gruppe des Agenten.",
+            "es": "Nombre o número; vacío: el primer grupo seguido, si no el primer grupo del agente."
+          }
+        },
+        {
+          "key": "text",
+          "type": "string",
+          "label": {
+            "en": "Text (empty: the title)",
+            "fr": "Texte (vide : le titre)",
+            "de": "Text (leer: der Titel)",
+            "es": "Texto (vacío: el título)"
+          }
+        },
+        {
+          "key": "priority",
           "type": "select",
-          "source": "devices",
-          "label": { "en": "Device", "fr": "Appareil" },
-          "required": true
+          "label": {
+            "en": "Priority (empty: default)",
+            "fr": "Priorité (vide : par défaut)",
+            "de": "Priorität (leer: Standard)",
+            "es": "Prioridad (vacío: predeterminada)"
+          },
+          "options": [
+            {
+              "value": "1 low",
+              "label": {
+                "en": "1 low",
+                "fr": "1 basse",
+                "de": "1 niedrig",
+                "es": "1 baja"
+              }
+            },
+            {
+              "value": "2 normal",
+              "label": {
+                "en": "2 normal",
+                "fr": "2 normale",
+                "de": "2 normal",
+                "es": "2 normal"
+              }
+            },
+            {
+              "value": "3 high",
+              "label": {
+                "en": "3 high",
+                "fr": "3 haute",
+                "de": "3 hoch",
+                "es": "3 alta"
+              }
+            }
+          ]
+        },
+        {
+          "key": "customer",
+          "type": "string",
+          "label": {
+            "en": "Customer e-mail (empty: the agent)",
+            "fr": "E-mail du client (vide : l'agent)",
+            "de": "Kunden-E-Mail (leer: der Agent)",
+            "es": "Correo del cliente (vacío: el agente)"
+          },
+          "description": {
+            "en": "An unknown address creates the customer in Zammad.",
+            "fr": "Une adresse inconnue crée le client dans Zammad.",
+            "de": "Eine unbekannte Adresse legt den Kunden in Zammad an.",
+            "es": "Una dirección desconocida crea el cliente en Zammad."
+          }
         }
       ],
       "outputs": [
         {
-          "key": "signalled",
-          "type": "boolean",
-          "label": { "en": "Device signalled", "fr": "Appareil signalé" }
+          "key": "ticket_id",
+          "type": "string",
+          "label": {
+            "en": "Ticket id",
+            "fr": "Identifiant du ticket",
+            "de": "Ticket-ID",
+            "es": "Identificador del ticket"
+          }
+        },
+        {
+          "key": "number",
+          "type": "string",
+          "label": {
+            "en": "Ticket number",
+            "fr": "Numéro du ticket",
+            "de": "Ticketnummer",
+            "es": "Número del ticket"
+          }
+        },
+        {
+          "key": "title",
+          "type": "string",
+          "label": {
+            "en": "Title",
+            "fr": "Titre",
+            "de": "Titel",
+            "es": "Título"
+          }
+        },
+        {
+          "key": "group",
+          "type": "string",
+          "label": {
+            "en": "Group",
+            "fr": "Groupe",
+            "de": "Gruppe",
+            "es": "Grupo"
+          }
+        },
+        {
+          "key": "url",
+          "type": "string",
+          "label": {
+            "en": "Ticket address",
+            "fr": "Adresse du ticket",
+            "de": "Ticket-Adresse",
+            "es": "Dirección del ticket"
+          }
         }
       ]
     }
   ],
   "widgets": [
     {
-      "key": "demo_status",
-      "label": { "en": "Demo status", "fr": "État de la démo" },
-      "description": {
-        "en": "Live temperature and plug power, plug connection and observed location.",
-        "fr": "Température et puissance en direct, connexion de la prise, position observée."
+      "key": "open_tickets",
+      "label": {
+        "en": "Open tickets",
+        "fr": "Tickets ouverts",
+        "de": "Offene Tickets",
+        "es": "Tickets abiertos"
       },
-      "icon": "activity",
-      "action_timeout_seconds": 15
+      "description": {
+        "en": "The 10 latest open tickets, escalated ones in red, with the open and escalated counts.",
+        "fr": "Les 10 derniers tickets ouverts, ceux en retard en rouge, avec les nombres d'ouverts et en retard.",
+        "de": "Die 10 neuesten offenen Tickets, eskalierte in Rot, mit der Zahl offener und eskalierter.",
+        "es": "Los 10 últimos tickets abiertos, los escalados en rojo, con el número de abiertos y escalados."
+      },
+      "icon": "inbox",
+      "settings": [
+        {
+          "key": "device",
+          "type": "select",
+          "source": "devices",
+          "required": false,
+          "label": {
+            "en": "Device (empty: the whole instance)",
+            "fr": "Appareil (vide : toute l'instance)",
+            "de": "Gerät (leer: die ganze Instanz)",
+            "es": "Dispositivo (vacío: toda la instancia)"
+          },
+          "description": {
+            "en": "A group device shows only the tickets of that group.",
+            "fr": "Un appareil de groupe n'affiche que les tickets de ce groupe.",
+            "de": "Ein Gruppengerät zeigt nur die Tickets dieser Gruppe.",
+            "es": "Un dispositivo de grupo muestra solo los tickets de ese grupo."
+          }
+        },
+        {
+          "key": "show_counters",
+          "type": "boolean",
+          "required": false,
+          "default": true,
+          "label": {
+            "en": "Show the counters",
+            "fr": "Afficher les compteurs",
+            "de": "Zähler anzeigen",
+            "es": "Mostrar los contadores"
+          }
+        }
+      ]
     }
   ]
 }
