@@ -30,6 +30,22 @@ Gladys before reporting a problem.
 
 In scope: the code of this repository and the Docker image it publishes.
 
+What the integration handles:
+
+- the **Zammad access token**, stored by Gladys in the integration
+  configuration (a `secret` field), sent only to the configured Zammad
+  address in the `Authorization` header, and never logged. Give it the
+  `ticket.agent` permission only; it can be revoked in Zammad at any time;
+- under `/data`, only `zammad-state.json`: the configured address, the time
+  of the last reading, the highest ticket id seen and the ids and escalation
+  times of the escalated tickets (no secret, no title, no customer);
+- network: outgoing HTTP(S) requests to the configured Zammad address only.
+  With "Accept self-signed certificates" ticked, the certificate of that
+  address is not verified.
+
+The "Create a Zammad ticket" scene action creates tickets as the agent of the
+token, and may create a customer from an e-mail address typed in a scene.
+
 Out of scope: Gladys Assistant itself (see its
 [security policy](https://github.com/GladysAssistant/Gladys/security/policy)),
-and the third-party services and devices the integration talks to.
+and Zammad itself.
